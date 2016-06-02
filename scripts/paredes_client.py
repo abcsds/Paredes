@@ -23,12 +23,13 @@ x = 100
 y = 100
 
 def distFront(sensor):
-    global x
+    global x, w
     if sensor['point_list'][5][0] == 0:
         x = 100
     else:
         x = sensor['point_list'][5][0]
-        x = x - 2.5 # Offset for the integral
+        # w += 0.1 *(1/x)
+        # x = x - 2.5 # Offset for the integral
 
 def distSide(sensor):
     global y
@@ -47,73 +48,60 @@ with Morse() as simu:
 
     # PID control
 
-    xu0=0.0  # Initial state of integer for x
-    yu0=0.0  # Initial state of integer for y
+    v = 1 # Just advance
 
-    xe0=0.0  # Initial state of error for x
+    yu0=0.0  # Initial state of integer for y
     ye0=0.0  # Initial state of error for y
+    xe0=0.0  # Initial state of error for y
 
     # Step variable
     k = 0
 
     # Initialization
-    xui_prev = xu0
     yui_prev = yu0
-    xe_prev = xe0
     ye_prev = ye0
+    xe_prev = xe0
 
     # Sampling Time
     h=0.1
 
     # Proportional, integral and derivate constants
     Kp=0.1
-    Ti=100
-    Td=100
+    Kpx=0.01
+    Ti=10
+    Td=1
 
     # Desired valiues
-    xc = 100
-    yc = 0 # 2.5 meters from wall
-
-    # while True: # Get to a wall
-    #     if x > 2.5:
-    #         v = 1
-    #         motion.publish({"v": v, "w": w})
-    #     else:
-    #         v = 0
-    #         motion.publish({"v": v, "w": w})
-    #         break
+    yc = -1 # 2.5 meters from wall
 
     while True:
         # Error between the desired and actual output
-        xe = xc - x
         ye = yc - y
+        xe = 100 - x
 
         # Integration Input
-        if -100 < xui_prev < 100:
-            xui = xui_prev + 1/Ti * h * xe
         if -100 < yui_prev < 100:
             yui = yui_prev + 1/Ti * h * ye
 
         # Derivation Input
-        xud = 1/Td * (xe - xe_prev)/h
         yud = 1/Td * (ye - ye_prev)/h
 
         # Adjust previous values
-        xe_prev = xe
         ye_prev = ye
-        xui_prev = xui
+        xe_prev = xe
         yui_prev = yui
 
         # Calculate input for the system
-        # v = Kp * xe + xui + xud
-        # v = Kp * xe + xud
-        v = Kp * (xe)
-        # w = Kp * ye + yui + yud
-        # w = Kp * ye + yud
-        w = -( Kp * (ye) )
+        # w = -(Kp * ye + yui + yud)
+        w = -( Kp * ye + yud)
+        # w = -( Kp * (ye) )
+        w -= Kpx * (xe)
+
 
         k += 1
-        v += 0.5
-        print ("PIDx:", str(xe), str(xui), str(xud), "PIDy:", str(ye), str(yui), str(yud))
+        # v += 0.5
+        if x == 100 and y == 100:
+            v,w = 1,0
+        print ("PIDy:", str(ye), str(yui), str(yud), "Px:", str(xe))
         print ("Speed:", str(v), "Angular:", str(w), "X:", str(x), "Y:", str(y))
         motion.publish({"v": v, "w": w})
