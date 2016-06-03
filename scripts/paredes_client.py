@@ -1,15 +1,6 @@
 #! /usr/bin/env python3
-"""
-Test client for the <paredes> simulation environment.
-
-This simple program shows how to control a robot from Python.
-
-For real applications, you may want to rely on a full middleware,
-like ROS (www.ros.org).
-"""
 
 import sys
-# import numpy as np
 
 try:
     from pymorse import Morse
@@ -28,8 +19,6 @@ def distFront(sensor):
         x = 100
     else:
         x = sensor['point_list'][5][0]
-        # w += 0.1 *(1/x)
-        # x = x - 2.5 # Offset for the integral
 
 def distSide(sensor):
     global y
@@ -46,7 +35,7 @@ with Morse() as simu:
     simu.Walle.sensorA.subscribe(distFront)
     simu.Walle.sensorB.subscribe(distSide)
 
-    # PID control
+    # PD control
 
     v = 1 # Just advance
 
@@ -92,16 +81,13 @@ with Morse() as simu:
         yui_prev = yui
 
         # Calculate input for the system
-        # w = -(Kp * ye + yui + yud)
         w = -( Kp * ye + yud)
-        # w = -( Kp * (ye) )
         w -= Kpx * (xe)
 
 
         k += 1
-        # v += 0.5
-        if x == 100 and y == 100:
-            v,w = 1,0
-        print ("PIDy:", str(ye), str(yui), str(yud), "Px:", str(xe))
-        print ("Speed:", str(v), "Angular:", str(w), "X:", str(x), "Y:", str(y))
+        # if x == 100 and y == 100:
+        #     v,w = 1,0
+        # print ("PIDy:", str(ye), str(yui), str(yud), "Px:", str(xe))
+        # print ("Speed:", str(v), "Angular:", str(w), "X:", str(x), "Y:", str(y))
         motion.publish({"v": v, "w": w})
